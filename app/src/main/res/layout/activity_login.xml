@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
+
+    <include layout="@layout/layout_toolbar"/>
+
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:src="@mipmap/icon_logo"/>
+
+
+    <EditText
+        android:id="@+id/et_login_user"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/selector_login_edittext"
+        android:drawableLeft="@mipmap/icon_mobile"
+        android:hint="手机号"
+        android:inputType="phone"
+        android:maxLength="11"
+        android:padding="10dp" />
+
+    <EditText
+        android:id="@+id/et_login_pwd"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/selector_login_edittext"
+        android:drawableLeft="@mipmap/icon_lock"
+        android:hint="请输入密码"
+        android:inputType="textPassword"
+        android:lines="1"
+        android:padding="10dp" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp">
+
+        <TextView
+            android:id="@+id/tv_login"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_alignParentTop="true"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/shape_login_textview_focused"
+            android:gravity="center"
+            android:padding="5dp"
+            android:text="@string/login"
+            android:textColor="@android:color/white"
+            android:textSize="16dp" />
+
+        <TextView
+            android:id="@+id/tv_register"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tv_login"
+            android:layout_marginTop="10dp"
+            android:text="手机快速注册" />
+
+        <TextView
+            android:id="@+id/tv_forgot_pwd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:layout_alignParentRight="true"
+            android:layout_alignTop="@+id/tv_register"
+            android:text="忘记密码？" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="10dp"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
+
+            <RadioButton
+                android:id="@+id/rb_login_qq"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:drawableTop="@mipmap/icon_qq"
+                android:gravity="center"
+                android:text="@string/login_by_qq" />
+
+            <RadioButton
+                android:id="@+id/rb_login_weibo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:drawableTop="@mipmap/icon_weibo"
+                android:gravity="center"
+                android:text="@string/login_by_weibo" />
+
+            <RadioButton
+                android:id="@+id/rb_login_wechat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:drawableTop="@mipmap/icon_wechat"
+                android:gravity="center"
+                android:text="@string/login_by_wechat" />
+
+
+        </LinearLayout>
+    </RelativeLayout>
+
+</LinearLayout>

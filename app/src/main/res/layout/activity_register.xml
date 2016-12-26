@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
+
+    <include layout="@layout/layout_toolbar"/>
+
+    <EditText
+        android:id="@+id/et_register_phone"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/selector_login_edittext"
+        android:drawableLeft="@mipmap/icon_mobile"
+        android:inputType="number"
+        android:maxLength="11"
+        android:hint="@string/pls_enter_phone_num"
+        android:padding="10dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/selector_login_edittext"
+        android:orientation="vertical">
+
+        <EditText
+        android:id="@+id/et_register_pwd"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:drawableLeft="@mipmap/icon_lock"
+        android:background="@drawable/selector_login_edittext"
+        android:hint="@string/pls_enter_pwd"
+        android:padding="10dp"
+        android:inputType="textPassword"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="2dp"
+            android:textColor="@android:color/holo_red_light"
+            android:textSize="10sp"
+            android:text="密码只能由数字、字母或下划线组成"/>
+
+        <EditText
+            android:id="@+id/et_register_pwd_confirm"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:drawableLeft="@mipmap/icon_lock"
+            android:background="@drawable/selector_login_edittext"
+            android:hint="@string/pls_confirm_pwd"
+            android:padding="10dp"
+            android:inputType="textPassword"/>
+
+
+
+        <!--<ImageView
+            android:layout_width="1px"
+            android:layout_height="match_parent"
+            android:layout_margin="5dp"
+            android:background="#acac96" />
+
+        <TextView
+            android:id="@+id/phone_regster_textview_getcode"
+            android:layout_width="wrap_content"
+            android:layout_height="50dp"
+            android:layout_marginLeft="8dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="获取验证码"-->
+
+            android:textColor="@color/toolBar" />
+
+        <EditText
+            android:id="@+id/et_register_nick"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:drawableLeft="@mipmap/icon_nick"
+            android:drawablePadding="1dp"
+            android:background="@drawable/selector_login_edittext"
+            android:hint="@string/pls_enter_nick"
+            android:padding="10dp"
+            android:layout_marginTop="10dp"
+            android:inputType="textPassword"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/selector_login_edittext"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/ll_phone_register_male"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:background="@drawable/shape_regster_gender_male_focused"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tv_phone_register_male"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@mipmap/icon_male"
+                    android:drawablePadding="3dp"
+                    android:text="@string/male"
+                    android:textColor="@android:color/white" />
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:id="@+id/ll_phone_register_female"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:background="@drawable/shape_regster_gender_female_nomal"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tv_phone_register_female"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@mipmap/icon_female"
+                    android:drawablePadding="3dp"
+                    android:textColor="@color/dark_gray"
+                    android:text="@string/female" />
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_register_submit"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:enabled="false"
+        android:background="@drawable/shape_register_textview_normal"
+        android:gravity="center"
+        android:padding="5dp"
+        android:text="@string/submit"
+        android:textColor="@android:color/white"
+        android:textSize="16dp" />
+
+
+</LinearLayout>

@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">友语</string>
+    <string name="slogan">掌中皆友，你言我语</string>
+    <string name="login">登  录</string>
+    <string name="more">更多</string>
+    <string name="login_by_wechat">微信登录</string>
+    <string name="login_by_weibo">微博登录</string>
+    <string name="login_by_qq">QQ登录</string>
+    <string name="register">注   册</string>
+    <string name="pls_enter_pwd">请输入6~16位密码</string>
+    <string name="pls_confirm_pwd">请再次确认密码</string>
+    <string name="next_step">下一步</string>
+    <string name="pls_enter_phone_num">请输入手机号码</string>
+    <string name="pls_enter_nick">请输入昵称</string>
+    <string name="male">男</string>
+    <string name="female">女</string>
+    <string name="submit">提交</string>
+</resources>
