@@ -71,7 +71,7 @@ public class RegisterActivity extends BaseActivity {
 
     @Override
     protected void initView() {
-        DialogViewBuilder.Init(this, "注册中......");
+        DialogViewBuilder.init(this, "注册中......");
         mLocation = new Location(this);
     }
 
@@ -251,16 +251,16 @@ public class RegisterActivity extends BaseActivity {
         String url = Constant.URL.DO_GET_URSER;
         RequestParams params = new RequestParams(url);
         LogUtils.sf(url);
-        params.addBodyParameter("user", mPhoneNum);
-        params.addBodyParameter("nickname", mNickName);
-        params.addBodyParameter("password", mPwd);
-        params.addBodyParameter("sex", mGender);
-        params.addBodyParameter("icon", "");
-        params.addBodyParameter("city", city);
-        params.addBodyParameter("location", position);
-        params.addBodyParameter("years", "");
-        params.addBodyParameter("qq", "");
-        params.addBodyParameter("action", "save");
+        params.addBodyParameter(Constant.RequestParamNames.user, mPhoneNum);
+        params.addBodyParameter(Constant.RequestParamNames.nickname, mNickName);
+        params.addBodyParameter(Constant.RequestParamNames.password, mPwd);
+        params.addBodyParameter(Constant.RequestParamNames.sex, mGender);
+        params.addBodyParameter(Constant.RequestParamNames.icon, "");
+        params.addBodyParameter(Constant.RequestParamNames.city, city);
+        params.addBodyParameter(Constant.RequestParamNames.location, position);
+        params.addBodyParameter(Constant.RequestParamNames.years, "");
+        params.addBodyParameter(Constant.RequestParamNames.qq, "");
+        params.addBodyParameter(Constant.RequestParamNames.action, "save");
 
         x.http().post(params, new Callback.CommonCallback<String>() {
 

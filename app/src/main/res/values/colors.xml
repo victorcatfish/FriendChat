@@ -7,4 +7,5 @@
     <color name="white">#ffffff</color>
     <color name="toolBar">#22AF5C</color>
     <color name="dark_gray">#bababa</color>
+    <color name="tab_bg">#f9f9f9</color>
 </resources>

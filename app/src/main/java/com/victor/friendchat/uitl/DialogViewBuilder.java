@@ -13,7 +13,7 @@ public class DialogViewBuilder {
 
     public static SweetAlertDialog sDialog;
 
-    public static void Init(Context context, String message) {
+    public static void init(Context context, String message) {
         sDialog = new SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE);
         sDialog.getProgressHelper().setBarColor(Color.parseColor("#22AF5C"));
         sDialog.setTitleText(message);
@@ -29,7 +29,6 @@ public class DialogViewBuilder {
     }
 
     public static void dismiss() {
-
         if (sDialog.isShowing()) {
             sDialog.dismiss();
         }

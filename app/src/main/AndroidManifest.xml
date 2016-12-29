@@ -3,19 +3,18 @@
           xmlns:tools="http://schemas.android.com/tools"
           package="com.victor.friendchat">
 
-
     <!-- 高德定位权限 -->
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
-    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
-
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION"/>
+    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS"/>
 
     <application
         android:name=".global.MyApplication"
@@ -26,13 +25,10 @@
         android:theme="@style/AppTheme"
         tools:replace="android:icon">
 
-
-
         <!-- 高德定位 -->
         <meta-data
             android:name="com.amap.api.v2.apikey"
-            android:value="942c9b7f5ba9d5b2fed38c18c763fd60" />
-
+            android:value="942c9b7f5ba9d5b2fed38c18c763fd60"/>
 
         <activity android:name=".ui.activity.LoginActivity">
             <intent-filter>
@@ -47,9 +43,20 @@
         </activity>
         <activity android:name=".base.BaseActivity">
         </activity>
+        <activity android:name=".ui.activity.MainActivity"/>
 
-        <service android:name="com.amap.api.location.APSService"></service>
+        <service android:name=".xmpp.XmppService"/>
 
+        <activity android:name=".ui.activity.SystemSettingActivity">
+        </activity>
+        <activity android:name=".ui.activity.AddFriendActivity">
+        </activity>
+        <activity android:name=".ui.activity.ShowMessageActivity">
+        </activity>
+        <activity android:name=".ui.activity.ShowImageActivity">
+        </activity>
+        <activity android:name=".ui.activity.ShowFoundActivity">
+        </activity>
     </application>
 
 </manifest>

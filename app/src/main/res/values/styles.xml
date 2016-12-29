@@ -10,12 +10,18 @@
         <item name="drawerArrowStyle">@style/AppTheme.MyDrawerArrowStyle</item>
     </style>
 
-    <!--加入一個新的 navigation drarwer 的風格-->
+    <!--加入一个新的 navigation drarwer 的风格-->
     <style name="AppTheme.MyDrawerArrowStyle" parent="Widget.AppCompat.DrawerArrowToggle">
-        <!--將 spinBars 屬性設定為 false-->
+        <!--将 spinBars 属性设定为 false-->
         <item name="spinBars">false</item>
-        <!--設定 drawer arrow 的顏色-->
+        <!--设定 drawer arrow 的颜色-->
         <item name="color">@android:color/white</item>
+    </style>
+
+    <!-- PopupWindow窗口动画 -->
+    <style name="MenuAnimationFade">
+        <item name="android:windowEnterAnimation">@anim/menu_fadein</item>
+        <item name="android:windowExitAnimation">@anim/menu_fadeout</item>
     </style>
 
 </resources>
