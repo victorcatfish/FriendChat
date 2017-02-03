@@ -1,10 +1,17 @@
 package com.victor.friendchat.ui.activity;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
@@ -16,6 +23,7 @@ import com.victor.friendchat.R;
 import com.victor.friendchat.base.BaseActivity;
 import com.victor.friendchat.domain.User;
 import com.victor.friendchat.global.Constant;
+import com.victor.friendchat.global.MyApplication;
 import com.victor.friendchat.uitl.DialogViewBuilder;
 import com.victor.friendchat.uitl.SaveUserUtil;
 import com.victor.friendchat.uitl.SharedPreferencesUtil;
@@ -32,8 +40,13 @@ import org.xutils.x;
 
 import java.lang.ref.WeakReference;
 
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.RuntimePermissions;
+
 import static com.victor.friendchat.R.id.tv_login;
 
+@RuntimePermissions
 public class LoginActivity extends BaseActivity {
 
     @ViewInject(R.id.et_login_user)
@@ -85,7 +98,7 @@ public class LoginActivity extends BaseActivity {
                                 activity.startService(new Intent(UIUtils.getContext(), XmppService.class));
                                 Intent intent = new Intent(UIUtils.getContext(), MainActivity.class);
                                 intent.putExtra("user", user);
-                                //regster_push(user.user);
+                                //regster_push(mUser.user);
                                 SharedPreferencesUtil.setBoolean(UIUtils.getContext(), "user_message", "login", true);
                                 activity.startActivity(intent);
                                 activity.finish();
@@ -111,16 +124,50 @@ public class LoginActivity extends BaseActivity {
     }
 
     @Override
-    protected int getLayoutResource() {
-        return R.layout.activity_login;
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
+    protected void initView() {
         DialogViewBuilder.init(LoginActivity.this, "正在登录......");
         mEtUser.setText("13888888888");
         mEtPwd.setText("123456");
+        LoginActivityPermissionsDispatcher.enterAppWithCheck(this);
+    }
+
+    @NeedsPermission({Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_COARSE_LOCATION,
+    Manifest.permission.GET_ACCOUNTS, Manifest.permission.READ_PHONE_STATE})
+    void enterApp() {
+
+    }
+
+    @OnPermissionDenied({Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.GET_ACCOUNTS, Manifest.permission.READ_PHONE_STATE})
+    void rejectPermissions() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("权限提醒")
+                .setMessage("是否要拒绝权限，如果拒绝，应用将无法正常运行")
+                .setPositiveButton("拒绝", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        MyApplication.getInstance().exit();
+                    }
+                })
+                .setNegativeButton("重设", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            if (!Settings.System.canWrite(LoginActivity.this)) {
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                intent.setData(Uri.parse("package:" + getPackageName()));
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                            }
+                        }
+                    }
+                })
+                .show();
+    }
+
+    @Override
+    protected int getLayoutResource() {
+        return R.layout.activity_login;
     }
 
     @Override
@@ -185,7 +232,6 @@ public class LoginActivity extends BaseActivity {
 
     }
 
-
     private void loginByUserPwd(String userName, String pwd) {
         DialogViewBuilder.show();
         RequestParams params = new RequestParams(Constant.URL.DO_GET_URSER);
@@ -236,5 +282,21 @@ public class LoginActivity extends BaseActivity {
 
             }
         });
+    }
+
+    /*@Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (DialogViewBuilder.sDialog.isShowing()) {
+            DialogViewBuilder.dismiss();
+        } else {
+            finish();
+        }
+    }*/
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        LoginActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
 }

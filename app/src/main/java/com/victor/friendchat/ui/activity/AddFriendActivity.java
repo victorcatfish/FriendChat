@@ -62,8 +62,10 @@ public class AddFriendActivity extends BaseActivity implements AdapterView.OnIte
         }
         private void handleMessage(Message msg, AddFriendActivity activity) {
             if (msg.what == 1) {
-                if (activity.mXmppUsers != null) {
+                if (activity.mXmppUsers != null && activity.mXmppUsers.size() > 0) {
                     activity.mLvResult.setAdapter(activity.new AddFriendAdapter());
+                } else {
+                    UIUtils.showShortToast(UIUtils.getContext(), "查无此用户，请重新输入账号或昵称");
                 }
 
             }

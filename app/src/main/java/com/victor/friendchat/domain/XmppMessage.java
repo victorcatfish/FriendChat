@@ -43,7 +43,7 @@ public class XmppMessage implements Serializable {
                 "id=" + id +
                 ", to='" + to + '\'' +
                 ", type='" + type + '\'' +
-                ", user=" + user +
+                ", mUser=" + user +
                 ", time='" + time + '\'' +
                 ", content='" + content + '\'' +
                 ", result='" + result + '\'' +

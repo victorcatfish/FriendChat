@@ -21,7 +21,7 @@ import com.victor.friendchat.domain.XmppMessage;
 public class XmppContentProvider extends ContentProvider {
 
     static final String PROVIDER_NAME =
-            "com.yyquan.jzh.xmpp";
+            "com.victor.friendchat.xmpp";
     //用来区分操作的是单条数据还是多条数据
     private static final int MESSAGE = 1;
     private static final int MESSAGES = 2;
@@ -74,9 +74,9 @@ public class XmppContentProvider extends ContentProvider {
     public String getType(Uri uri) {
         switch (matcher.match(uri)) {
             case MESSAGE:
-                return "vnd.android.cursor.item/com.yyquan.jzh";
+                return "vnd.android.cursor.item/com.victor.friendchat";
             case MESSAGES:
-                return "vnd.android.cursor.dir/com.yyquan.jzh";
+                return "vnd.android.cursor.dir/com.victor.friendchat";
             default:
                 throw new IllegalArgumentException("未知uri:" + uri);
         }
@@ -152,7 +152,6 @@ public class XmppContentProvider extends ContentProvider {
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         int num = 0;
         switch (matcher.match(uri)) {
-
             case MESSAGE:
                 long id = ContentUris.parseId(uri);
                 String whereClause = "id=" + id;
@@ -177,7 +176,6 @@ public class XmppContentProvider extends ContentProvider {
 
 
     private class MyDataBaseHelper extends SQLiteOpenHelper {
-
 
         public MyDataBaseHelper(Context context) {
             super(context, "xmpp.db", null, 1);

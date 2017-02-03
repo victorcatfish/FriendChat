@@ -3,10 +3,15 @@ package com.victor.friendchat.ui.activity;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -25,20 +30,41 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.amap.api.location.AMapLocalWeatherForecast;
+import com.amap.api.location.AMapLocalWeatherListener;
+import com.amap.api.location.AMapLocalWeatherLive;
+import com.amap.api.location.LocationManagerProxy;
 import com.squareup.picasso.Picasso;
 import com.victor.friendchat.R;
 import com.victor.friendchat.domain.User;
+import com.victor.friendchat.domain.XmppChat;
 import com.victor.friendchat.global.Constant;
+import com.victor.friendchat.global.MyApplication;
 import com.victor.friendchat.ui.fragment.FoundFragment;
 import com.victor.friendchat.ui.fragment.FriendFragment;
 import com.victor.friendchat.ui.fragment.MessageFragment;
+import com.victor.friendchat.uitl.Base64Coder;
+import com.victor.friendchat.uitl.ImageCompressUtils;
+import com.victor.friendchat.uitl.LogUtils;
+import com.victor.friendchat.uitl.PhotoSelectedHelper;
+import com.victor.friendchat.uitl.SetImageUtil;
+import com.victor.friendchat.uitl.SharedPreferencesUtil;
 import com.victor.friendchat.uitl.UIUtils;
 import com.victor.friendchat.widget.CircleImageView;
+import com.victor.friendchat.xmpp.XmppReceiver;
+import com.victor.friendchat.xmpp.XmppTool;
 
+import org.xutils.common.Callback;
+import org.xutils.http.RequestParams;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
@@ -47,11 +73,12 @@ import static com.victor.friendchat.ui.activity.MainActivity.POPCODE.GETPICPOP;
 import static com.victor.friendchat.ui.activity.MainActivity.POPCODE.IMAGEPOP;
 import static com.victor.friendchat.ui.activity.MainActivity.POPCODE.SETSTATUSPOP;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, PopupWindow.OnDismissListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, PopupWindow.OnDismissListener, AMapLocalWeatherListener {
 
     public static final String TAG_MSG_FRAGMENT = "tag_msg_fragment";
     private static final String TAG_FRIEND_FRAGMENT = "tag_friend_fragment";
     private static final String TAG_FOUND_FRAGMENT = "tag_found_fragment";
+    public static MainActivity main;
 
     @ViewInject(R.id.ll_avatar)
     private LinearLayout mLlAvatar;
@@ -101,23 +128,84 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ImageView mCivNvAvatar;
     private Intent mIntent;
     private SweetAlertDialog mUpdateAvatarDialog;
-    private MessageFragment mMsgFragment;
-    private FriendFragment mFrindFragment;
-    private FoundFragment mFoundFragment;
+    public MessageFragment mMsgFragment;
+    public FriendFragment mFrindFragment;
+    public FoundFragment mFoundFragment;
+    private LocationManagerProxy mLocationManagerProxy;
+    public XmppReceiver mXmppReceiver;
+    PhotoSelectedHelper mPhotoSelectedHelper;
+    String path;
+
+    Handler h = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == 0) {
+                mUpdateAvatarDialog.dismiss();
+                if (mFoundFragment != null) {
+                    mFoundFragment.updateData(mUser.icon);
+                }
+                if (mFoundFragment != null) {
+                    mFoundFragment.update();
+                }
+
+                String filename = (String) msg.obj;
+                Toast.makeText(MainActivity.this, "头像修改成功", Toast.LENGTH_SHORT).show();
+                Picasso.with(MainActivity.this).load(new File(filename)).resize(200, 200).centerCrop().into(mCivNvAvatar);
+                Picasso.with(MainActivity.this).load(new File(filename)).resize(200, 200).centerCrop().into(mCivAvatar);
+            } else if (msg.what == 1) {
+                mUpdateAvatarDialog.dismiss();
+                Toast.makeText(MainActivity.this, "头像修改失败", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+
+    XmppReceiver.updateActivity ua = new XmppReceiver.updateActivity() {
+        @Override
+        public void update(String type) {
+            switch (type) {
+                case "status":
+                    if (mFrindFragment != null) {
+                        mFrindFragment.getData();
+                    }
+                    break;
+                case "tongyi":
+                    if (mFrindFragment != null) {
+                        mFrindFragment.initialData();
+                    }
+                    if (mFrindFragment != null) {
+                        mFrindFragment.getData();
+                    }
+                    break;
+                case "add":
+                    LogUtils.sf("有添加好友申请进入-----------------");
+                    mMsgFragment.initData();
+                    break;
+                case "jujue":
+                case "chat":
+                    if (mFrindFragment != null) {
+                        mFrindFragment.initialData();
+                    }
+                    break;
+            }
+        }
+
+        @Override
+        public void update(XmppChat xc) {
+
+        }
+    };
+    private ImageView mIvNvWeather;
+    private ImageView mIvNvImg;
+    private TextView mTvNvName;
+    private TextView mTvNvWeather;
+    private TextView mTvNvDate;
+    private ImageView mIvNvStatus;
+
 
     enum POPCODE {
         IMAGEPOP,
         GETPICPOP,
         SETSTATUSPOP
-    }
-
-    enum STATUS {
-        ONLINE,
-        QME,
-        BUSY,
-        NOBOTHER,
-        LEAVE,
-        INVISIBLE
     }
 
     enum FRAGMENT_TYPE {
@@ -130,17 +218,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        MyApplication.getInstance().addActivity(this);
         x.view().inject(this);
-
+        main = this;
+        mPhotoSelectedHelper = new PhotoSelectedHelper(MainActivity.this);
         Intent intent = getIntent();
         mUser = (User) intent.getSerializableExtra("user");
-        initNvView();
+        initView();
         initListener();
         initImgPop();
         initGetPicPop();
         initSetStatusPop();
         initUpdateAvatarDialog();
         updateFragment(FRAGMENT_TYPE.MESSAGE);
+    }
+
+    private void initView() {
+        mXmppReceiver = new XmppReceiver(ua);
+        registerReceiver(mXmppReceiver, new IntentFilter("xmpp_receiver"));
+        mLocationManagerProxy = LocationManagerProxy.getInstance(this);
+        mLocationManagerProxy.requestWeatherUpdates(
+                LocationManagerProxy.WEATHER_TYPE_LIVE, this);
+        initNvView();
     }
 
     private void updateFragment(FRAGMENT_TYPE type) {
@@ -155,6 +254,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Fragment fragment;
         switch (type) {
             case MESSAGE:
+                mTvTitle.setText("消息");
                 mTvMsg.setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.tab_move_pressed_icon, 0, 0);
                 mTvMsg.setTextColor(mTvMsg.getResources().getColor(R.color.toolBar));
                 fragment = getSupportFragmentManager().findFragmentByTag(TAG_MSG_FRAGMENT);
@@ -166,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
             case FRIEND:
+                mTvTitle.setText("好友");
                 mTvFriend.setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.tab_me_pressed_icon, 0, 0);
                 mTvFriend.setTextColor(mTvFriend.getResources().getColor(R.color.toolBar));
                 fragment = getSupportFragmentManager().findFragmentByTag(TAG_FRIEND_FRAGMENT);
@@ -177,6 +278,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
             case LUNTAN:
+                mTvTitle.setText("动态");
                 mTvFound.setCompoundDrawablesWithIntrinsicBounds(0, R.mipmap.tab_found_pressed_icon, 0, 0);
                 mTvFound.setTextColor(mTvFriend.getResources().getColor(R.color.toolBar));
                 fragment = getSupportFragmentManager().findFragmentByTag(TAG_FOUND_FRAGMENT);
@@ -219,13 +321,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         View NvHeaderView = mNvProfile.inflateHeaderView(R.layout.navigation_header);
         mCivNvAvatar = (ImageView) NvHeaderView.findViewById(R.id.civ_nv_avatar);
-        ImageView ivNvImg = (ImageView) NvHeaderView.findViewById(R.id.iv_nv_img);
-        TextView tvNvName = (TextView) NvHeaderView.findViewById(R.id.tv_nv_name);
-        ImageView ivNvWeather = (ImageView) NvHeaderView.findViewById(R.id.iv_nv_weather);
-        TextView tvNvWeather = (TextView) NvHeaderView.findViewById(R.id.tv_nv_weather);
-        TextView tvNvDate = (TextView) NvHeaderView.findViewById(R.id.tv_nv_date);
+        mIvNvImg = (ImageView) NvHeaderView.findViewById(R.id.iv_nv_img);
+        mTvNvName = (TextView) NvHeaderView.findViewById(R.id.tv_nv_name);
+        mIvNvStatus = (ImageView) NvHeaderView.findViewById(R.id.iv_nv_status);
+        mIvNvWeather = (ImageView) NvHeaderView.findViewById(R.id.iv_nv_weather);
+        mTvNvWeather = (TextView) NvHeaderView.findViewById(R.id.tv_nv_weather);
+        mTvNvDate = (TextView) NvHeaderView.findViewById(R.id.tv_nv_date);
 
-        tvNvName.setText(mUser.nickname);
+        mTvNvName.setText(mUser.nickname);
         if (TextUtils.isEmpty(mUser.icon)) { // 判断如果用户没有设定头像，就设置默认头像
             if (mUser.sex.equals("男")) {
                 mCivNvAvatar.setImageResource(R.mipmap.avatar_male);
@@ -296,7 +399,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.civ_nv_avatar:
                 // 弹出设置头像对话框
                 showPopupWindow(IMAGEPOP);
-                UIUtils.showShortToast(this, "更改资料");
+                //UIUtils.showShortToast(this, "更改资料");
                 // mDrawerLayout.closeDrawers();//关闭抽屉
                 break;
             case R.id.third_popupwindow_layout_null:
@@ -336,8 +439,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 break;
             case R.id.third_popupwindow_textView_look:
-                UIUtils.showShortToast(this, "查看大头像");
+                // UIUtils.showShortToast(this, "查看大头像");
+                if (mPopImage != null) {
+                    mPopImage.dismiss();
 
+                }
+                Intent intent = new Intent(this, ShowImageActivity.class);
+                if (mUser.icon.equals("")) {
+                    path = mUser.sex;
+                } else {
+                    path = mUser.icon;
+                }
+                intent.putExtra("path", path);
+                intent.putExtra("type", "icon");
+                startActivity(intent);
                 break;
             case R.id.third_popupwindow_textView_change:
                 showPopupWindow(GETPICPOP);
@@ -349,11 +464,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 break;
             case R.id.third_popupwindow_textView_photo:
-                UIUtils.showShortToast(this, "从相册选取");
+                //UIUtils.showShortToast(this, "从相册选取");
+                if (mPopGetPic != null) {
+                    mPopGetPic.dismiss();
+
+                }
+                if (mUser != null) {
+                    mPhotoSelectedHelper.imageSelection(mUser.user, "pic");
+                }
+
                 break;
 
             case R.id.third_popupwindow_textView_camera:
-                UIUtils.showShortToast(this, "拍照");
+                //UIUtils.showShortToast(this, "拍照");
+                if (mPopGetPic != null) {
+                    mPopGetPic.dismiss();
+
+                }
+                if (mUser != null) {
+                    mPhotoSelectedHelper.imageSelection(mUser.user, "take");
+                }
 
                 break;
             case R.id.third_popupwindow_textView_status_online:
@@ -361,42 +491,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     mPopSetStatus.dismiss();
 
                 }
-                setPresence(STATUS.ONLINE);
+                setPresence(XmppTool.STATUS.ONLINE);
                 break;
             case R.id.third_popupwindow_textView_status_qme:
                 if (mPopSetStatus != null) {
                     mPopSetStatus.dismiss();
 
                 }
-                setPresence(STATUS.QME);
+                setPresence(XmppTool.STATUS.QME);
                 break;
             case R.id.third_popupwindow_textView_status_busy:
                 if (mPopSetStatus != null) {
                     mPopSetStatus.dismiss();
 
                 }
-                setPresence(STATUS.BUSY);
+                setPresence(XmppTool.STATUS.BUSY);
                 break;
             case R.id.third_popupwindow_textView_status_wurao:
                 if (mPopSetStatus != null) {
                     mPopSetStatus.dismiss();
 
                 }
-                setPresence(STATUS.NOBOTHER);
+                setPresence(XmppTool.STATUS.NOBOTHER);
                 break;
             case R.id.third_popupwindow_textView_status_leave:
                 if (mPopSetStatus != null) {
                     mPopSetStatus.dismiss();
 
                 }
-                setPresence(STATUS.LEAVE);
+                setPresence(XmppTool.STATUS.LEAVE);
                 break;
             case R.id.third_popupwindow_textView_status_yinshen:
                 if (mPopSetStatus != null) {
                     mPopSetStatus.dismiss();
 
                 }
-                setPresence(STATUS.INVISIBLE);
+                setPresence(XmppTool.STATUS.INVISIBLE);
                 break;
         }
     }
@@ -602,6 +732,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
+    public void onWeatherLiveSearched(AMapLocalWeatherLive aMapLocalWeatherLive) {
+        if (aMapLocalWeatherLive != null && aMapLocalWeatherLive.getAMapException().getErrorCode() == 0) {
+            String city = aMapLocalWeatherLive.getCity();//城市
+            String weather = aMapLocalWeatherLive.getWeather();//天气情况
+            String windDir = aMapLocalWeatherLive.getWindDir();//风向
+            String windPower = aMapLocalWeatherLive.getWindPower();//风力
+            String humidity = aMapLocalWeatherLive.getHumidity();//空气湿度
+            String reportTime = aMapLocalWeatherLive.getReportTime();//数据发布时间
+            String wendu = aMapLocalWeatherLive.getTemperature();//温度
+            mTvNvWeather.setText(city + ":\t" + wendu + "℃");
+            mTvNvDate.setText(weather + "\n" + reportTime);
+
+            if (weather.contains("雨")) {
+                mIvNvWeather.setImageResource(R.mipmap.yu_60);
+            } else if (weather.equals("阴")) {
+                mIvNvWeather.setImageResource(R.mipmap.yun_26);
+            } else if (weather.contains("云")) {
+                mIvNvWeather.setImageResource(R.mipmap.c_28);
+            } else if (weather.contains("雪")) {
+                mIvNvWeather.setImageResource(R.mipmap.c_14);
+            } else if (weather.equals("晴")) {
+                mIvNvWeather.setImageResource(R.mipmap.c_32);
+            } else if (weather.contains("沙")) {
+                mIvNvWeather.setImageResource(R.mipmap.c_62);
+            } else if (weather.contains("霾") || weather.contains("雾")) {
+                mIvNvWeather.setImageResource(R.mipmap.c_63);
+            }
+            //  tv_me_name.setText(wendu+"\n"+city+"\n"+weather+"\n"+windDir+"\n"+windPower+"\n"+humidity+"\n"+reportTime);
+
+        } else {
+            // 获取天气预报失败
+
+        }
+    }
+
+    @Override
+    public void onWeatherForecaseSearched(AMapLocalWeatherForecast aMapLocalWeatherForecast) {
+        UIUtils.showShortToast(this, "获取天气预报失败:" + aMapLocalWeatherForecast.getAMapException().getErrorMessage());
+    }
+
+    @Override
     public void onDismiss() {
 
     }
@@ -610,8 +781,168 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 设置状态
      * @param status 状态
      */
-    private void setPresence(STATUS status) {
+    private void setPresence(XmppTool.STATUS status) {
+        XmppTool.getInstance().setPresence(status);
+        SharedPreferencesUtil.setInt(MainActivity.this, "status", mUser.user + "status", status.ordinal());
+        XmppTool.getInstance().setPresence(mIvStatus, mIvNvStatus, this, mUser.user);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        XmppTool.disConnectServer();
+        unregisterReceiver(mXmppReceiver);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
 
+        if (requestCode == mPhotoSelectedHelper.TAKE_PHOTO) {
+            if (!(resultCode == RESULT_OK)) {
+                return;
+            }
+
+            if (data != null) {
+                mPhotoSelectedHelper.cropImageUri(data.getData(), 200, 200, mUser.user);
+                mPhotoSelectedHelper.cropImageUri(mPhotoSelectedHelper.getCaptureUri(), 200, 200, mUser.user);
+            }
+
+
+        } else if (requestCode == mPhotoSelectedHelper.PHOTO_CROP) {
+            if (!(resultCode == RESULT_OK)) {
+                return;
+            }
+            final String cropPath = mPhotoSelectedHelper.getCropPath();
+            if (cropPath != null) {
+                mUpdateAvatarDialog.show();
+                new Thread() {
+                    @Override
+                    public void run() {
+                        super.run();
+                        upload(cropPath, "tack");
+                    }
+                }.start();
+
+
+            }
+
+        } else if (requestCode == mPhotoSelectedHelper.PIC_PHOTO) {
+            if (data == null) {
+                return;
+            } else {
+                Uri uri = data.getData();
+                if (uri != null) {
+                    path = SetImageUtil.getPath(this, uri);
+                    if (path != null) {
+                        mUpdateAvatarDialog.show();
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                super.run();
+                                upload(path, "pic");
+                            }
+                        }.start();
+
+
+                    }
+
+                }
+            }
+        } else if (requestCode == 199) {
+            if (data == null) {
+                return;
+            }
+            String nickname = data.getStringExtra("nickname");
+            String sex = data.getStringExtra("sex");
+            String qq = data.getStringExtra("qq");
+            String years = data.getStringExtra("years");
+
+            mUser.nickname = nickname;
+            mUser.sex = sex;
+            mUser.qq = qq;
+            mUser.years = years;
+            mTvNvName.setText(nickname);
+        } else if (resultCode == 200) {
+            if (mFoundFragment != null) {
+                mFoundFragment.update();
+            }
+
+        }
+
+    }
+
+    // 上传
+    public void upload(final String paths, String type) {
+
+        String filename = paths.substring(paths.lastIndexOf("/") + 1);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+        ImageCompressUtils.getimage(paths).compress(Bitmap.CompressFormat.JPEG,
+                50, stream);
+        byte[] b = stream.toByteArray();
+        // 将图片流以字符串形式存储下来
+        String file = new String(Base64Coder.encodeLines(b));
+
+
+        RequestParams params = new RequestParams(Constant.URL.DO_GET_URSER);
+        params.addHeader("Accept",
+                "text/javascript, text/html, application/xml, text/xml");
+        params.addHeader("Accept-Charset", "GBK,utf-8;q=0.7,*;q=0.3");
+        params.addHeader("Accept-Encoding", "gzip,deflate,sdch");
+        params.addHeader("Connection", "Keep-Alive");
+        params.addHeader("Cache-Control", "no-cache");
+        params.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        params.addBodyParameter(Constant.RequestParamNames.file, file);
+        if (type.equals("pic")) {
+            filename = mUser.user + "_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".jpg";
+        }
+
+        params.addBodyParameter(Constant.RequestParamNames.filename, filename);
+        params.addBodyParameter(Constant.RequestParamNames.user, mUser.user);
+        params.addBodyParameter(Constant.RequestParamNames.action, "update_icon");
+
+
+        final String finalFilename = filename;
+        x.http().post(params, new Callback.CommonCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                path = paths;
+                mUser.icon = finalFilename;
+                System.out.println("上传完成");
+                Message m = new Message();
+                m.what = 0;
+                m.obj = path;
+
+                h.sendMessage(m);
+            }
+
+            @Override
+            public void onError(Throwable ex, boolean isOnCallback) {
+                System.out.println("上传失败");
+                mUpdateAvatarDialog.dismiss();
+                Message m = new Message();
+                m.what = 1;
+
+                h.sendMessage(m);
+            }
+
+            @Override
+            public void onCancelled(CancelledException cex) {
+                System.out.println("上传失败");
+                mUpdateAvatarDialog.dismiss();
+                Message m = new Message();
+                m.what = 1;
+                h.sendMessage(m);
+            }
+
+            @Override
+            public void onFinished() {
+
+            }
+        });
     }
 }

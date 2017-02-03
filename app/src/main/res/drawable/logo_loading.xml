@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@mipmap/loading_ring_0" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_1" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_2" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_3" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_4" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_5" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_6" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_7" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_8" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_9" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_10" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_11" android:duration="100"></item>
+
+</animation-list>

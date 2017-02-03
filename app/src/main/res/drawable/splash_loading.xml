@@ -6,7 +6,7 @@
     <item android:drawable="@mipmap/loading_ring_1" android:duration="100"></item>
     <item android:drawable="@mipmap/loading_ring_2" android:duration="100"></item>
     <item android:drawable="@mipmap/loading_ring_3" android:duration="100"></item>
-    <item android:drawable="@mipmap/lading_ring_4" android:duration="100"></item>
+    <item android:drawable="@mipmap/loading_ring_4" android:duration="100"></item>
     <item android:drawable="@mipmap/loading_ring_5" android:duration="100"></item>
     <item android:drawable="@mipmap/loading_ring_6" android:duration="100"></item>
     <item android:drawable="@mipmap/loading_ring_7" android:duration="100"></item>

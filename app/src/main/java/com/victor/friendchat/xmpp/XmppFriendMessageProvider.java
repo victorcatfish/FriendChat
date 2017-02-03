@@ -21,7 +21,7 @@ import com.victor.friendchat.domain.XmppChat;
 public class XmppFriendMessageProvider extends ContentProvider {
 
     static final String PROVIDER_NAME =
-            "com.yyquan.jzh.xmpp.chat";
+            "com.victor.friendchat.chat";
     //用来区分操作的是单条数据还是多条数据
     private static final int CHAT = 1;
     private static final int CHATS = 2;
@@ -75,9 +75,9 @@ public class XmppFriendMessageProvider extends ContentProvider {
     public String getType(Uri uri) {
         switch (matcher.match(uri)) {
             case CHAT:
-                return "vnd.android.cursor.item/com.yyquan.jzh";
+                return "vnd.android.cursor.item/com.victor.friendchat";
             case CHATS:
-                return "vnd.android.cursor.dir/com.yyquan.jzh";
+                return "vnd.android.cursor.dir/com.victor.friendchat";
             default:
                 throw new IllegalArgumentException("未知uri:" + uri);
         }
@@ -187,7 +187,7 @@ public class XmppFriendMessageProvider extends ContentProvider {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            //String user, String nickname, String icon, int type, String content, String sex, String too, int viewType, long time
+            //String mUser, String nickname, String icon, int type, String content, String sex, String too, int viewType, long time
             String sql = "create table chat(id integer primary key autoincrement,main text,user text,nickname text,icon text,type integer,content text,sex text,too text,viewtype integer,time text)";
             db.execSQL(sql); // 执行一个sql语句
         }

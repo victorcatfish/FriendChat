@@ -131,7 +131,7 @@ public class FoundListViewAdapter extends BaseAdapter {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(context, ShowMessageActivity.class);
-                    intent.putExtra("user", news.get(position).user.user);
+                    intent.putExtra("user", news.get(position).user);
                     context.startActivity(intent);
                 }
             });
@@ -139,7 +139,7 @@ public class FoundListViewAdapter extends BaseAdapter {
                 @Override
                 public void onClick(View v) {
                     Intent intent = new Intent(context, ShowMessageActivity.class);
-                    intent.putExtra("user", news.get(position).user.user);
+                    intent.putExtra("user", news.get(position).user);
                     context.startActivity(intent);
                 }
             });

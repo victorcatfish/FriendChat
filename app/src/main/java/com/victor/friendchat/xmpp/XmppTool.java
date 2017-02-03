@@ -70,10 +70,21 @@ public class XmppTool {
 
     private String tag = "XmppTool";
     private static XmppTool sXmppTool;
-    public static final String HOST = "192.168.2.101";
+    public static final String HOST = "192.168.2.103";
     public static final int PORT = 5222;
     private static XMPPConnection sConn;
     private Context mContext;
+    public List<Message> mOffMsgs;
+
+    public enum STATUS {
+        ONLINE,
+        QME,
+        BUSY,
+        NOBOTHER,
+        LEAVE,
+        INVISIBLE
+    }
+
 
     public static XmppTool getInstance() {
         if (sXmppTool == null) {
@@ -92,70 +103,88 @@ public class XmppTool {
         connConfig.setSASLAuthenticationEnabled(false);
         //设置安全类型
         connConfig.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
+        connConfig.setSendPresence(false);
         sConn = new XMPPConnection(connConfig);
+        LogUtils.sf("-------------------创建连接-----------------");
+
         sConn.DEBUG_ENABLED = true;
+        SmackConfiguration.setPacketReplyTimeout(30000);// 设置超时时间
+        SmackConfiguration.setKeepAliveInterval(-1);
+        SmackConfiguration.setDefaultPingInterval(0);
 
         Roster.setDefaultSubscriptionMode(Roster.SubscriptionMode.manual);
-        try {
-            if (sConn.isConnected()) {// 首先判断是否还连接着服务器，需要先断开
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                super.run();
                 try {
-                    sConn.disconnect();
-                } catch (Exception e) {
-                    LogUtils.i(tag, "conn.disconnect() failed: " + e);
+                    if (sConn.isConnected()) {// 首先判断是否还连接着服务器，需要先断开
+                        try {
+                            sConn.disconnect();
+                        } catch (Exception e) {
+                            LogUtils.i(tag, "conn.disconnect() failed: " + e);
+                        }
+                    }
+                    sConn.connect();
+
+
+                } catch (XMPPException e) {
+                    LogUtils.e(tag, Log.getStackTraceString(e));
                 }
             }
-            SmackConfiguration.setPacketReplyTimeout(30000);// 设置超时时间
-            SmackConfiguration.setKeepAliveInterval(-1);
-            SmackConfiguration.setDefaultPingInterval(0);
-            sConn.connect();
-
-            sConn.addConnectionListener(new ConnectionListener() {
-
-                @Override
-                public void reconnectionSuccessful() {
-                    // TODO Auto-generated method stub
-                    LogUtils.i(tag, "重连成功");
-                }
-
-                @Override
-                public void reconnectionFailed(Exception arg0) {
-                    // TODO Auto-generated method stub
-                    LogUtils.i(tag, "重连失败");
-                    //                    User user = SaveUserUtil.loadAccount(context);
-                    //                    login(user.getUser(), user.getPassword());
-
-
-                }
-
-                @Override
-                public void reconnectingIn(int arg0) {
-                    // TODO Auto-generated method stub
-                    LogUtils.i(tag, "重连中");
-                }
-
-                @Override
-                public void connectionClosedOnError(Exception e) {
-                    // TODO Auto-generated method stub
-                    LogUtils.i(tag, "连接出错");
-                    if (e.getMessage().contains("conflict")) {
-                        LogUtils.i(tag, "被挤掉了");
-                        disConnectServer();
-
-                    }
-                    //                    User user = SaveUserUtil.loadAccount(context);
-                    //                    login(user.getUser(), user.getPassword());
-                }
-
-                @Override
-                public void connectionClosed() {
-                    // TODO Auto-generated method stub
-                    LogUtils.i(tag, "连接关闭");
-                }
-            });
-
-        } catch (XMPPException e) {
-            LogUtils.e(tag, Log.getStackTraceString(e));
+        };
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+
+
+        sConn.addConnectionListener(new ConnectionListener() {
+
+            @Override
+            public void reconnectionSuccessful() {
+                // TODO Auto-generated method stub
+                LogUtils.i(tag, "重连成功");
+            }
+
+            @Override
+            public void reconnectionFailed(Exception arg0) {
+                // TODO Auto-generated method stub
+                LogUtils.i(tag, "重连失败");
+                //                    User mUser = SaveUserUtil.loadAccount(context);
+                //                    login(mUser.getUser(), mUser.getPassword());
+
+
+            }
+
+            @Override
+            public void reconnectingIn(int arg0) {
+                // TODO Auto-generated method stub
+                LogUtils.i(tag, "重连中");
+            }
+
+            @Override
+            public void connectionClosedOnError(Exception e) {
+                // TODO Auto-generated method stub
+                LogUtils.i(tag, "连接出错");
+                if (e.getMessage().contains("conflict")) {
+                    LogUtils.i(tag, "被挤掉了");
+                    disConnectServer();
+
+                }
+                //                    User mUser = SaveUserUtil.loadAccount(context);
+                //                    login(mUser.getUser(), mUser.getPassword());
+            }
+
+            @Override
+            public void connectionClosed() {
+                // TODO Auto-generated method stub
+                LogUtils.i(tag, "连接关闭");
+            }
+        });
+
     }
 
     /**
@@ -170,11 +199,16 @@ public class XmppTool {
         return false;
     }
 
-
     public boolean login(String user, String password, Context context) {
         try {
             sConn.login(user, password);
-            int status = SharedPreferencesUtil.getInt(context, "status", name + "status");
+            // 获取离线消息
+            OfflineMessageManager offlineMsgManager = new OfflineMessageManager(sConn);
+            getOfflineMessage(offlineMsgManager);
+            Presence presence = new Presence(Presence.Type.available);
+            sConn.sendPacket(presence);
+            int ordinal = SharedPreferencesUtil.getInt(context, "status", name + "status");
+            STATUS status = STATUS.values()[ordinal];
             setPresence(status);
             return true;
         } catch (XMPPException e) {
@@ -185,6 +219,28 @@ public class XmppTool {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取离线消息
+     * @param manager
+     */
+    public void getOfflineMessage(OfflineMessageManager manager){
+
+        if (manager != null){
+            try {
+                //int num = manager.getMessageCount();
+                mOffMsgs = new ArrayList<>();
+                Iterator<Message> it = manager.getMessages();
+                while (it.hasNext()) {
+                    Message msg = it.next();
+                    mOffMsgs.add(msg);
+                }
+                manager.deleteMessages();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -217,8 +273,12 @@ public class XmppTool {
             new Thread() {
                 public void run() {
                     sConn.disconnect();
+                    sConn = null;
                 }
             }.start();
+        }
+        if (sXmppTool != null) {
+            sXmppTool = null;
         }
 
     }
@@ -242,7 +302,7 @@ public class XmppTool {
         }
         return false;
     }
-    
+
 
     /**
      * 判断是否是好友
@@ -294,8 +354,8 @@ public class XmppTool {
         }
 
     }
-    
-    
+
+
     /**
      * 获取所有分组
      *
@@ -308,7 +368,7 @@ public class XmppTool {
         list.addAll(roster.getGroups());
         return list;
     }
-    
+
     /**
      * 获取某一个分组的成员
      *
@@ -356,44 +416,44 @@ public class XmppTool {
      *
      * @param state
      */
-    public void setPresence(int state) {
+    public void setPresence(STATUS state) {
         Presence presence;
         switch (state) {
             //0.在线 1.Q我吧 2.忙碌 3.勿扰 4.离开 5.隐身 6.离线
-            case 0:
+            case ONLINE:
                 presence = new Presence(Presence.Type.available);
                 sConn.sendPacket(presence);
                 LogUtils.e(tag, "设置在线");
                 break;
-            case 1:
+            case QME:
                 presence = new Presence(Presence.Type.available);
                 presence.setMode(Presence.Mode.chat);
                 sConn.sendPacket(presence);
                 LogUtils.e(tag, "Q我吧");
                 LogUtils.e(tag, presence.toXML());
                 break;
-            case 2:
+            case BUSY:
                 presence = new Presence(Presence.Type.available);
                 presence.setMode(Presence.Mode.dnd);
                 sConn.sendPacket(presence);
                 LogUtils.e(tag, "忙碌");
                 LogUtils.e(tag, presence.toXML());
                 break;
-            case 3:
+            case NOBOTHER:
                 presence = new Presence(Presence.Type.available);
                 presence.setMode(Presence.Mode.xa);
                 sConn.sendPacket(presence);
                 LogUtils.e(tag, "勿扰");
                 LogUtils.e(tag, presence.toXML());
                 break;
-            case 4:
+            case LEAVE:
                 presence = new Presence(Presence.Type.available);
                 presence.setMode(Presence.Mode.away);
                 sConn.sendPacket(presence);
                 LogUtils.e(tag, "离开");
                 LogUtils.e(tag, presence.toXML());
                 break;
-            case 5:
+            case INVISIBLE:
                 Roster roster = sConn.getRoster();
                 Collection<RosterEntry> entries = roster.getEntries();
                 for (RosterEntry entity : entries) {
@@ -485,6 +545,27 @@ public class XmppTool {
     }
 
     public XMPPConnection getConn() {
+        if (!sConn.isConnected()) {
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    super.run();
+                    try {
+                        sConn.connect();
+                        LogUtils.sf("-------------创建连接--------------------");
+                    } catch (XMPPException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            try {
+                thread.start();
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
         return sConn;
     }
 

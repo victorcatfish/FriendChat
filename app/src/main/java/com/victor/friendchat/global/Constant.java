@@ -13,7 +13,7 @@ public class Constant {
 
     public class URL {
 
-        public static final String BASE_URL = "http://192.168.2.101:8080/FriendChatServer";
+        public static final String BASE_URL = "http://192.168.2.103:8080/FriendChatServer";
 
         public static final String DO_GET_URSER = BASE_URL + "/DoGetUser";
 
@@ -22,7 +22,7 @@ public class Constant {
     }
 
     public class RequestParamNames {
-        // "user", mPhoneNum);
+        // "mUser", mPhoneNum);
         // "nickname", mNickName)
         //         "password", mPwd);
         // "sex", mGender);
@@ -43,6 +43,18 @@ public class Constant {
         public static final String years = "years";
         public static final String qq = "qq";
         public static final String action = "action";
+        public static final String limit = "limit";
+        public static final String time = "time";
+        public static final String content = "content";
+        public static final String image_size = "image_size";
+        public static final String file = "file";
+        public static final String filename = "filename";
+        public static final String plid = "plid";
+        public static final String pid = "pid";
+        public static final String author = "author";
+        public static final String plocation = "plocation";
+        public static final String ptime = "ptime";
+        public static final String pcontent = "pcontent";
     }
 
     /**

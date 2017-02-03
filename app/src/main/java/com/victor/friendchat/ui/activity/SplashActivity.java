@@ -6,6 +6,7 @@ import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 
 import com.victor.friendchat.R;
+import com.victor.friendchat.global.MyApplication;
 import com.victor.friendchat.uitl.UIUtils;
 
 public class SplashActivity extends AppCompatActivity {
@@ -13,6 +14,7 @@ public class SplashActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        MyApplication.getInstance().addActivity(this);
         setContentView(R.layout.activity_splash);
 
         new Thread() {

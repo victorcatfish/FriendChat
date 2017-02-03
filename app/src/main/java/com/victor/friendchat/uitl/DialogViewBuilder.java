@@ -17,7 +17,7 @@ public class DialogViewBuilder {
         sDialog = new SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE);
         sDialog.getProgressHelper().setBarColor(Color.parseColor("#22AF5C"));
         sDialog.setTitleText(message);
-        sDialog.setCancelable(false);
+        sDialog.setCancelable(true);
 
     }
 

@@ -17,6 +17,7 @@ import com.victor.friendchat.domain.User;
 import com.victor.friendchat.domain.XmppChat;
 import com.victor.friendchat.domain.XmppMessage;
 import com.victor.friendchat.domain.XmppUser;
+import com.victor.friendchat.uitl.LogUtils;
 import com.victor.friendchat.uitl.SaveUserUtil;
 import com.victor.friendchat.uitl.SharedPreferencesUtil;
 import com.victor.friendchat.uitl.TimeUtil;
@@ -50,8 +51,7 @@ public class XmppService extends Service {
         super.onCreate();
         resolver = getContentResolver();
         map = new HashMap<>();
-        mConn = XmppTool.getInstance().getConn();
-        user = SaveUserUtil.loadAccount(XmppService.this).user;
+        //mUser = SaveUserUtil.loadAccount(XmppService.this).mUser;
         pool = new SoundPool(10, AudioManager.STREAM_SYSTEM, 5);
         pool.load(this, R.raw.tishi, 1);
         vibrator = (Vibrator) getSystemService(Service.VIBRATOR_SERVICE);
@@ -66,13 +66,25 @@ public class XmppService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        user = SaveUserUtil.loadAccount(XmppService.this).user;
+        XmppTool xmppTool = XmppTool.getInstance();
+        mConn = xmppTool.getConn();
+
+        if (xmppTool.mOffMsgs != null) {
+            for (int i =0; i < xmppTool.mOffMsgs.size(); i++) {
+                Message message = xmppTool.mOffMsgs.get(i);
+                receiveOffMsg(message);
+            }
+        }
+
+        //PacketFilter filter = new AndFilter(new PacketTypeFilter(Presence.class));
         if (null != mConn && mConn.isConnected()) {
-
-
             mConn.addPacketListener(new PacketListener() {
 
                 @Override
                 public void processPacket(Packet packet) {
+
+                    LogUtils.sf("有消息进来");
 
                     if (packet instanceof Presence) {
                         Presence presence = (Presence) packet;
@@ -128,18 +140,7 @@ public class XmppService extends Service {
                     } else if (packet instanceof Message) {
                         Message msg = (Message) packet;
                         Log.i("service", msg.getFrom() + " 说：" + msg.getBody() + " 字符串长度：" + msg.getBody().length());
-                        int viewType;
-                        if (msg.getBody().length() > 3 && msg.getBody().toString().substring(0, 4).equals("http")) {
-                            viewType = 2;
-                        } else {
-                            viewType = 1;
-                        }
-                        List<XmppUser> list_xu = XmppTool.getInstance().searchUsers(msg.getFrom().split("@")[0]);
-                        User users = new Gson().fromJson(list_xu.get(0).name, User.class);
-                        Log.i("serviceeeeee", list_xu.get(0).name);
-                        XmppChat xc = new XmppChat(user + users.user, users.user, users.nickname, users.icon, 2, msg.getBody().toString(), users.sex, user, viewType, new Date().getTime());
-                        XmppFriendMessageProvider.add_message(xc);
-                        sendBroad("chat", xc);
+                        receiveMsg(msg);
 
                     }
 
@@ -148,9 +149,64 @@ public class XmppService extends Service {
 
 
         }
-
         // TODO Auto-generated method stub
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void receiveOffMsg(Message msg) {
+        int viewType;
+        if (msg.getBody().length() > 3 && msg.getBody().toString().substring(0, 4).equals("http")) {
+            viewType = 2;
+        } else {
+            viewType = 1;
+        }
+        // 插入到聊天消息的数据库
+        List<XmppUser> list_xu = XmppTool.getInstance().searchUsers(msg.getFrom().split("@")[0]);
+        User users = new Gson().fromJson(list_xu.get(0).name, User.class);
+        Log.i("serviceeeeee", list_xu.get(0).name);
+        XmppChat xc = new XmppChat(user + users.user, users.user, users.nickname, users.icon, 2, msg.getBody().toString(), users.sex, user, viewType, new Date().getTime());
+        XmppFriendMessageProvider.add_message(xc);
+
+        // 插入到消息列表的数据库
+        Cursor cursor = XmppService.resolver.query(XmppContentProvider.CONTENT_MESSAGES_URI, null,
+                "main=? and type=?", new String[]{xc.main, "chat"}, null);
+        if (!cursor.moveToFirst()) {
+            List<XmppUser> list1 = XmppTool.getInstance().searchUsers(xc.user);
+            XmppMessage xm = new XmppMessage(xc.too,
+                    "chat",
+                    new XmppUser(list1.get(0).userName, list1.get(0).name),
+                    TimeUtil.getDate(),
+                    xc.content,
+                    1,
+                    xc.main
+            );
+            XmppContentProvider.add_message(xm);
+        } else {
+            //更新
+            int id = cursor.getInt(cursor.getColumnIndex("id"));
+            int result = cursor.getInt(cursor.getColumnIndex("result"));
+            ContentValues values = new ContentValues();
+            values.put("content", xc.content);
+            values.put("time", TimeUtil.getTime(xc.time));
+            values.put("result", (result + 1));
+            XmppService.resolver.update(XmppContentProvider.CONTENT_MESSAGES_URI, values, "id=?", new String[]{id + ""});
+        }
+
+    }
+
+    public void receiveMsg(Message msg) {
+        int viewType;
+        if (msg.getBody().length() > 3 && msg.getBody().toString().substring(0, 4).equals("http")) {
+            viewType = 2;
+        } else {
+            viewType = 1;
+        }
+        List<XmppUser> list_xu = XmppTool.getInstance().searchUsers(msg.getFrom().split("@")[0]);
+        User users = new Gson().fromJson(list_xu.get(0).name, User.class);
+        Log.i("serviceeeeee", list_xu.get(0).name);
+        XmppChat xc = new XmppChat(user + users.user, users.user, users.nickname, users.icon, 2, msg.getBody().toString(), users.sex, user, viewType, new Date().getTime());
+        XmppFriendMessageProvider.add_message(xc);
+        sendBroad("chat", xc);
     }
 
 
@@ -169,6 +225,7 @@ public class XmppService extends Service {
         intent.putExtra("type", type);
         sendBroadcast(intent);
     }
+
 
     private void sendBroad(String type) {
         String str_content = "";
@@ -191,18 +248,17 @@ public class XmppService extends Service {
         }
         List<XmppUser> list2 = XmppTool.getInstance().searchUsers(s1[0]);
         if (msgDatas(s2[0] + list2.get(0).name, s1[0], s2[0], str_content, str_type)) {
+            Intent intent = new Intent("xmpp_receiver");
+            intent.putExtra("type", type);
+            sendBroadcast(intent);
             if (pool != null && SharedPreferencesUtil.getBoolean(this, "tishi", "music", true)) {
                 pool.play(1, 1, 1, 0, 0, 1);
             }
             if(vibrator!=null&&SharedPreferencesUtil.getBoolean(this, "tishi", "zhendong", true)){
                 vibrator.vibrate(500);
             }
-            Intent intent;
-            intent = new Intent("xmpp_receiver");
-            intent.putExtra("type", type);
-            sendBroadcast(intent);
-        }
 
+        }
 
     }
 
@@ -256,6 +312,5 @@ public class XmppService extends Service {
         }
 
     }
-
 
 }

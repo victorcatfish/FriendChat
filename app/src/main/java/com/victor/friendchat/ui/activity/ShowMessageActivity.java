@@ -1,5 +1,6 @@
 package com.victor.friendchat.ui.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -7,15 +8,19 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 import com.victor.friendchat.R;
 import com.victor.friendchat.base.BaseActivity;
 import com.victor.friendchat.domain.User;
+import com.victor.friendchat.domain.XmppFriend;
 import com.victor.friendchat.global.Constant;
 import com.victor.friendchat.ui.fragment.UserMessageFragment;
 import com.victor.friendchat.ui.fragment.UserStatusFragment;
@@ -45,6 +50,7 @@ public class ShowMessageActivity extends BaseActivity {
     private User mUsrs;
     private UserMessageFragment mUserMsgFragment;
     private UserStatusFragment mUserStatusFragment;
+    private String mName;
 
 
     @Override
@@ -55,6 +61,10 @@ public class ShowMessageActivity extends BaseActivity {
     @Override
     protected void initView() {
         mUsrs = (User) getIntent().getSerializableExtra("user");
+        if (mUsrs != null) {
+            Gson gson = new Gson();
+            mName = gson.toJson(mUsrs);
+        }
         LogUtils.sf (mUsrs.toString());
     }
 
@@ -84,13 +94,13 @@ public class ShowMessageActivity extends BaseActivity {
 
     private void refreshView() {
         mTvName.setText(mUsrs.nickname);
-        if (mUsrs.city.equals("")) {
+        if (TextUtils.isEmpty(mUsrs.city)) {
             mTvCity.setText("未知星球");
         } else {
             mTvCity.setText(mUsrs.city);
         }
 
-        if (mUsrs.icon.equals("")) {
+        if (TextUtils.isEmpty(mUsrs.icon)) {
             if (mUsrs.sex.equals("男")) {
                 mCivAvatar.setImageResource(R.mipmap.avatar_male);
             } else {
@@ -111,7 +121,6 @@ public class ShowMessageActivity extends BaseActivity {
             }
         }
         mCivAvatar.setOnClickListener(ShowMessageActivity.this);
-        String user = XmppService.user;
         if (XmppService.user.equals(mUsrs.user)) {
             mBtnAdd.setVisibility(View.GONE);
         } else {
@@ -129,10 +138,45 @@ public class ShowMessageActivity extends BaseActivity {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.civ_show_message_avatar:
-                UIUtils.showShortToast(this, "展示大头像");
+                if (mUsrs != null) {
+                    Intent in = new Intent(this, ShowImageActivity.class);
+                    String path = "";
+                    if (mUsrs.icon.equals("")) {
+                        path = mUsrs.sex;
+                    } else {
+                        path = mUsrs.icon;
+                    }
+                    in.putExtra("path", path);
+                    in.putExtra("type", "icon");
+                    startActivity(in);
+                }
                 break;
             case R.id.btn_show_message_add:
-                UIUtils.showShortToast(this, "添加好友");
+                if (mBtnAdd.getText().equals("发信息")) {
+                    Intent intent = new Intent(this, ChatActivity.class);
+                    intent.putExtra("xmpp_friend", new XmppFriend(mUsrs));
+                    startActivity(intent);
+                    finish();
+
+                } else if (mBtnAdd.getText().equals("加好友")) {
+                    //15612610827;江城北望丶;15612610827_20151202_232508.jpg;男
+
+                    Log.i("search>>>>", mUsrs.nickname + "\t" + mUsrs.user);
+                    if (XmppTool.getInstance().addUser(
+                            mUsrs.user + "@" + XmppTool.getInstance().getConn().getServiceName(),
+                            mUsrs.nickname, null)) {
+                        XmppTool.getInstance().addUserToGroup(
+                                mUsrs.user + "@" + XmppTool.getInstance().getConn().getServiceName(),
+                                "我的好友");
+                        Log.i("search",
+                                "申请添加" + mUsrs.user + "@"
+                                        + XmppTool.getInstance().getConn().getServiceName() + "为好友");
+                        UIUtils.showShortToast(ShowMessageActivity.this, "请求已发送");
+                    } else {
+                        UIUtils.showShortToast(ShowMessageActivity.this, "请求发送失败，请稍后再试");
+                        Log.i("search", "添加失败");
+                    }
+                }
                 break;
         }
     }

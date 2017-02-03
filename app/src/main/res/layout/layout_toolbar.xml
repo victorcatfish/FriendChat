@@ -8,6 +8,7 @@
     android:minHeight="?attr/actionBarSize"
     android:navigationIcon="@mipmap/icon_toolbar_home_button"
     app:navigationIcon="@mipmap/icon_toolbar_home_button"
+    android:theme="@style/AppTheme.ToolBar"
     android:background="@color/toolBar">
 
     <TextView
